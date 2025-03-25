@@ -1,8 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using PdfApi.Models;
+using QuestPDF;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace PdfApi.Controllers;
 
+[ApiController]
+[Route("[controller]/[action]")]
 public class OrdersController : Controller
 {
     private readonly ILogger<OrdersController> _logger;
@@ -12,8 +18,8 @@ public class OrdersController : Controller
         _logger = logger;
     }
     
-    [HttpGet(Name = "GetWeatherForecast")]
-    public async Task<IActionResult> DownloadInvoice()
+    [HttpGet]
+    public IActionResult DownloadInvoice()
     {
         var orderDetails = new List<OrderDetailDto>();
 
@@ -32,12 +38,31 @@ public class OrdersController : Controller
             
             orderDetails.Add(purchaseOrder);
         }
+
+        var pdfStream = GeneratePdf(orderDetails, 100);
         
+        Response.Headers.ContentDisposition = "attachment: filename=invoice.pdf";
         
+        pdfStream.Seek(0, SeekOrigin.Begin);
+        
+        return File(pdfStream, "application/pdf", "invoice.pdf");
     }
 
     private MemoryStream GeneratePdf(List<OrderDetailDto> orderDetails, decimal price)
     {
+        Settings.License = LicenseType.Community;
         
+        var pdfStream = new MemoryStream();
+
+        Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.PageColor(Colors.White);
+            });
+        }).GeneratePdf(pdfStream);
+        
+        return pdfStream;
     }
 }
