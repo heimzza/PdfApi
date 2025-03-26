@@ -60,9 +60,58 @@ public class OrdersController : Controller
             {
                 page.Size(PageSizes.A4);
                 page.PageColor(Colors.White);
+                page.Content()
+                    .PaddingHorizontal(20)
+                    .PaddingVertical(20)
+                    .DefaultTextStyle(x => x.FontSize(12))
+                    .Column(main =>
+                    {
+                        BuildDetails(main, orderDetails);
+                    });
             });
         }).GeneratePdf(pdfStream);
         
         return pdfStream;
+    }
+
+    private void BuildDetails(ColumnDescriptor main, List<OrderDetailDto> orderDetails)
+    {
+        main.Item()
+            .Container()
+            .Text("Purchase Details")
+            .Bold();
+        
+        main.Item()
+            .Container()
+            .Table(table =>
+            {
+                table.ColumnsDefinition(c =>
+                {
+                    c.ConstantColumn(60);
+                    c.RelativeColumn(3);
+                    c.RelativeColumn(3);
+                    c.RelativeColumn(3);
+                    c.RelativeColumn(3);
+                });
+
+                foreach (var detail in orderDetails)
+                {
+                    table.Cell().Element(c =>
+                    {
+                        c.Container()
+                            .Text(detail.Title)
+                            .FontSize(14);
+                    });
+                    
+                    table.Cell().Element(c =>
+                    {
+                        c.Container().Text(detail.Price);
+                    });
+
+                    table.Cell().Text(detail.AssetId);
+                    table.Cell().Text(detail.Format);
+                    table.Cell().Text(detail.Licensing);
+                }
+            });
     }
 }
